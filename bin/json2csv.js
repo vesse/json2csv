@@ -105,7 +105,6 @@ getFields(function (err, fields) {
     }
 
     var opts = {
-      data: input,
       fields: fields,
       hasCSVColumnTitle: program.header,
       quotes: program.quote,
@@ -126,7 +125,7 @@ getFields(function (err, fields) {
       opts.newLine = program.newLine;
     }
 
-    var csv = json2csv(opts);
+    var csv = json2csv(input, opts);
 
     if (program.output) {
       fs.writeFile(program.output, csv, function (writeError) {

@@ -23,32 +23,16 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
     /*eslint-enable no-console*/
   }
 
-  test('should work synchronously', function (t) {
-    var csv = json2csv({
-      data: jsonDefault
-    });
+  test('should parse json to csv without fields', function (t) {
+    var csv = json2csv(jsonDefault);
     t.equal(csv, csvFixtures.default);
     t.end();
   });
 
-  test('should work asynchronously and not release zalgo', function (t) {
-    var releasedZalgo = true;
-    json2csv({
-      data: jsonDefault
-    }, function (err, csv) {
-      t.equal(csv, csvFixtures.default);
-      t.notOk(releasedZalgo);
-      t.end();
-    });
-
-    releasedZalgo = false;
-  });
-
-  test('should error synchronously if fieldNames don\'t line up to fields', function (t) {
+  test('should error if fieldNames don\'t line up to fields', function (t) {
     var csv;
     try {
-      csv = json2csv({
-        data: jsonDefault,
+      csv = json2csv(jsonDefault, {
         field: ['carModel'],
         fieldNames: ['test', 'blah']
       });
@@ -60,246 +44,173 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
     }
   });
 
-  test('should error asynchronously if fieldNames don\'t line up to fields', function (t) {
-    json2csv({
-      data: jsonDefault,
-      field: ['carModel'],
-      fieldNames: ['test', 'blah']
-    }, function (error, csv) {
-      t.equal(error.message, 'fieldNames and fields should be of the same length, if fieldNames is provided.');
-      t.notOk(csv);
-      t.end();
-    });
-  });
-
   test('should parse json to csv', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color', 'transmission']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.default);
-      t.end();
     });
-  });
-
-  test('should parse json to csv without fields', function (t) {
-    json2csv({
-      data: jsonDefault
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.default);
-      t.end();
-    });
+    t.equal(csv, csvFixtures.default);
+    t.end();
   });
 
   test('should parse json to csv without column title', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color'],
       hasCSVColumnTitle: false
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.withoutTitle);
-      t.end();
     });
+    t.equal(csv, csvFixtures.withoutTitle);
+    t.end();
   });
 
   test('should parse data:{} to csv with only column title', function (t) {
-    json2csv({
-      data: {},
+    var csv = json2csv({}, {
       fields: ['carModel', 'price', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, '"carModel","price","color"');
-      t.end();
     });
+
+    t.equal(csv, '"carModel","price","color"');
+    t.end();
   });
 
   test('should parse data:[null] to csv with only column title', function (t) {
-    json2csv({
-      data: [null],
+    var csv = json2csv([null], {
       fields: ['carModel', 'price', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, '"carModel","price","color"');
-      t.end();
     });
+    t.equal(csv, '"carModel","price","color"');
+    t.end();
   });
 
   test('should output only selected fields', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.selected);
-      t.end();
     });
+    t.equal(csv, csvFixtures.selected);
+    t.end();
   });
 
   test('should output not exist field with empty value', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['first not exist field', 'carModel', 'price', 'not exist field', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.withNotExistField);
-      t.end();
     });
+    t.equal(csv, csvFixtures.withNotExistField);
+    t.end();
   });
 
   test('should output reversed order', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['price', 'carModel']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.reversed);
-      t.end();
     });
+    t.equal(csv, csvFixtures.reversed);
+    t.end();
   });
 
   test('should output a string', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.ok(typeof csv === 'string');
-      t.end();
     });
+    t.ok(typeof csv === 'string');
+    t.end();
   });
 
   test('should escape quotes with double quotes', function (t) {
-    json2csv({
-      data: jsonQuotes,
+    var csv = json2csv(jsonQuotes, {
       fields: ['a string']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.quotes);
-      t.end();
     });
+    t.equal(csv, csvFixtures.quotes);
+    t.end();
   });
 
   test('should use a custom delimiter when \'quotes\' property is present', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price'],
       quotes: '\''
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.withSimpleQuotes);
-      t.end();
     });
+    t.equal(csv, csvFixtures.withSimpleQuotes);
+    t.end();
   });
 
   test('should be able to don\'t output quotes when using \'quotes\' property', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price'],
       quotes: ''
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.withoutQuotes);
-      t.end();
     });
+    t.equal(csv, csvFixtures.withoutQuotes);
+    t.end();
   });
 
   test('should use a custom delimiter when \'del\' property is present', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color'],
       del: '\t'
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.tsv);
-      t.end();
     });
+    t.equal(csv, csvFixtures.tsv);
+    t.end();
   });
 
   test('should use a custom eol character when \'eol\' property is present', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color'],
       eol: ';'
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.eol);
-      t.end();
     });
+    t.equal(csv, csvFixtures.eol);
+    t.end();
   });
 
   test('should use a custom eol character when \'newLine\' property is present', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price', 'color'],
       newLine: '\r\n'
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.newLine);
-      t.end();
     });
+    t.equal(csv, csvFixtures.newLine);
+    t.end();
   });
 
   test('should name columns as specified in \'fieldNames\' property', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       fields: ['carModel', 'price'],
       fieldNames: ['Car Model', 'Price USD']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.fieldNames);
-      t.end();
     });
+    t.equal(csv, csvFixtures.fieldNames);
+    t.end();
   });
 
   test('should output nested properties', function (t) {
-    json2csv({
-      data: jsonNested,
+    var csv = json2csv(jsonNested, {
       fields: ['car.make', 'car.model', 'price', 'color', 'car.ye.ar'],
       fieldNames: ['Make', 'Model', 'Price', 'Color', 'Year']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.nested);
-      t.end();
     });
+    t.equal(csv, csvFixtures.nested);
+    t.end();
   });
 
   test('should output default values when missing data', function (t) {
-    json2csv({
-      data: jsonDefaultValue,
+    var csv = json2csv(jsonDefaultValue, {
       fields: ['carModel', 'price'],
       defaultValue: 'NULL'
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.defaultValue);
-      t.end();
     });
+    t.equal(csv, csvFixtures.defaultValue);
+    t.end();
   });
 
   test('should output default values when default value is set to empty string', function (t) {
-    json2csv({
-      data: jsonDefaultValueEmpty,
+    var csv = json2csv(jsonDefaultValueEmpty, {
       fields: ['carModel', 'price'],
       defaultValue: ''
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.defaultValueEmpty);
-      t.end();
     });
+    t.equal(csv, csvFixtures.defaultValueEmpty);
+    t.end();
   });
 
-  test('should error if params is not an object', function (t) {
-    json2csv({
-      data: 'not an object',
-      field: ['carModel'],
-      fieldNames: ['test', 'blah']
-    }, function (error, csv) {
-      t.equal(error.message, 'params should include "fields" and/or non-empty "data" array of objects');
+  test('should error if data is not an array or object', function (t) {
+    var csv;
+    try {
+      csv = json2csv('not an object', {
+        field: ['carModel'],
+        fieldNames: ['test', 'blah']
+      });
+    } catch(error) {
+      t.equal(error.message, 'Data needs to be an object or array');
       t.notOk(csv);
       t.end();
-    });
+    }
   });
 
   test('should parse line-delimited JSON', function (t) {
@@ -315,29 +226,22 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
   });
 
   test('should handle embedded JSON', function (t) {
-    json2csv({
-      data: {'field1': {embeddedField1: 'embeddedValue1', embeddedField2: 'embeddedValue2'}}
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.embeddedjson);
-      t.end();
-    });
+    var csv = json2csv({'field1': {embeddedField1: 'embeddedValue1', embeddedField2: 'embeddedValue2'}});
+    t.equal(csv, csvFixtures.embeddedjson);
+    t.end();
   });
 
   test('should flatten embedded JSON', function (t) {
-    json2csv({
-      data: {'field1': {embeddedField1: 'embeddedValue1', embeddedField2: 'embeddedValue2'}},
+    var csv = json2csv({'field1': {embeddedField1: 'embeddedValue1', embeddedField2: 'embeddedValue2'}}, {
       flatten: true
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.flattenedEmbeddedJson);
-      t.end();
     });
+    t.equal(csv, csvFixtures.flattenedEmbeddedJson);
+    t.end();
   });
 
   test('should process fancy fields option', function (t) {
-    json2csv({
-      data: [{
+    var csv = json2csv([
+      {
         path1: 'hello ',
         path2: 'world!',
         bird: {
@@ -354,7 +258,7 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
           nest1: 'meep',
           nest2: 'meep'
         }
-      }],
+      }], {
       fields: [{
         label: 'PATH1',
         value: 'path1'
@@ -375,49 +279,37 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
         }
       ],
       defaultValue: 'NULL'
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.fancyfields);
-      t.end();
     });
+
+    t.equal(csv, csvFixtures.fancyfields);
+    t.end();
   });
 
   test('should parse JSON values with trailing backslashes', function (t) {
-    json2csv({
-      data: jsonTrailingBackslash,
+    var csv = json2csv(jsonTrailingBackslash, {
       fields: ['carModel', 'price', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.trailingBackslash);
-      t.end();
     });
+    t.equal(csv, csvFixtures.trailingBackslash);
+    t.end();
   });
 
   test('should escape " when preceeded by \\', function (t){
-    json2csv({
-      data: [{field: '\\"'}]
-    }, function (error, csv){
-      t.error(error);
-      t.equal(csv, '"field"\n"\\""');
-      t.end();
-    });
+    var csv = json2csv([{field: '\\"'}]);
+    t.equal(csv, '"field"\n"\\""');
+    t.end();
   });
 
   test('should format strings to force excel to view the values as strings', function (t) {
-    json2csv({
-      data: jsonDefault,
+    var csv = json2csv(jsonDefault, {
       excelStrings:true,
       fields: ['carModel', 'price', 'color']
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.excelStrings);
-      t.end();
     });
+    t.equal(csv, csvFixtures.excelStrings);
+    t.end();
   });
 
   test('should override defaultValue with field.defaultValue', function (t) {
-    json2csv({
-      data: jsonOverriddenDefaultValue,
+    var csv = json2csv(jsonOverriddenDefaultValue, {
       fields: [
         {
           value: 'carModel',
@@ -431,16 +323,13 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
         }
       ],
       defaultValue: ''
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.overriddenDefaultValue);
-      t.end();
     });
+    t.equal(csv, csvFixtures.overriddenDefaultValue);
+    t.end();
   });
 
   test('should use options.defaultValue when using function with no field.default', function (t) {
-    json2csv({
-      data: jsonOverriddenDefaultValue,
+    var csv = json2csv(jsonOverriddenDefaultValue, {
       fields: [
         {
           value: 'carModel',
@@ -460,16 +349,13 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
         }
       ],
       defaultValue: ''
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.overriddenDefaultValue);
-      t.end();
     });
+    t.equal(csv, csvFixtures.overriddenDefaultValue);
+    t.end();
   });
 
   test('should include empty rows when options.includeEmptyRows is true', function (t) {
-    json2csv({
-      data: jsonEmptyRow,
+    var csv = json2csv(jsonEmptyRow, {
       fields: [
         {
           value: 'carModel',
@@ -487,17 +373,14 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
           },
         }
       ],
-      includeEmptyRows: true,
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.emptyRow);
-      t.end();
+      includeEmptyRows: true
     });
+    t.equal(csv, csvFixtures.emptyRow);
+    t.end();
   });
 
   test('should not include empty rows when options.includeEmptyRows is false', function (t) {
-    json2csv({
-      data: jsonEmptyRow,
+    var csv = json2csv(jsonEmptyRow, {
       fields: [
         {
           value: 'carModel',
@@ -515,17 +398,14 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
           },
         }
       ],
-      includeEmptyRows: false,
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.emptyRowNotIncluded);
-      t.end();
+      includeEmptyRows: false
     });
+    t.equal(csv, csvFixtures.emptyRowNotIncluded);
+    t.end();
   });
 
   test('should not include empty rows when options.includeEmptyRows is not specified', function (t) {
-    json2csv({
-      data: jsonEmptyRow,
+    var csv = json2csv(jsonEmptyRow, {
       fields: [
         {
           value: 'carModel',
@@ -542,17 +422,14 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
             return row.color;
           },
         }
-      ],
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.emptyRowNotIncluded);
-      t.end();
+      ]
     });
+    t.equal(csv, csvFixtures.emptyRowNotIncluded);
+    t.end();
   });
 
   test('should include empty rows when options.includeEmptyRows is true, with default values', function (t) {
-    json2csv({
-      data: jsonEmptyRow,
+    var csv = json2csv(jsonEmptyRow, {
       fields: [
         {
           value: 'carModel',
@@ -572,35 +449,27 @@ async.parallel(loadFixtures(csvFixtures), function (err) {
         }
       ],
       defaultValue: 'NULL',
-      includeEmptyRows: true,
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.emptyRowDefaultValues);
-      t.end();
+      includeEmptyRows: true
     });
+    t.equal(csv, csvFixtures.emptyRowDefaultValues);
+    t.end();
   });
 
   test('should parse data:[null] to csv with only column title, despite options.includeEmptyRows', function (t) {
-    json2csv({
-      data: [null],
+    var csv = json2csv([null], {
       fields: ['carModel', 'price', 'color'],
       includeEmptyRows: true,
-    }, function (error, csv) {
-      t.error(error);
-      t.equal(csv, '"carModel","price","color"');
-      t.end();
     });
+    t.equal(csv, '"carModel","price","color"');
+    t.end();
   });
 
   test('should unwind an array into multiple rows', function(t) {
-    json2csv({
-      data: jsonUnwind,
+    var csv = json2csv(jsonUnwind, {
       fields: ['carModel', 'price', 'colors'],
       unwindPath: 'colors'
-    }, function(error, csv) {
-      t.error(error);
-      t.equal(csv, csvFixtures.unwind);
-      t.end()
-    })
+    });
+    t.equal(csv, csvFixtures.unwind);
+    t.end()
   });
 });
